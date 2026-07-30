@@ -1,0 +1,45 @@
+{
+  "name": "building-web",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "构建web页面",
+  "engines": {
+    "node": ">=22.9.0",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "rsbuild dev --env-mode=dev --open",
+    "build": "rsbuild build --env-mode=prod",
+    "build:test": "rsbuild build --env-mode=test",
+    "build:rsdoctor": "cross-env RSDOCTOR=true rsbuild build --env-mode=prod",
+    "preview": "rsbuild preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^7.4.3",
+    "@eslint-react/eslint-plugin": "^2.12.4",
+    "@rsbuild/core": "^2.1.9",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@tanstack/eslint-plugin-query": "^5.91.4",
+    "@tanstack/router-plugin": "^1.162.8",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "cross-env": "^10.1.0",
+    "eslint": "^9.12.0",
+    "eslint-plugin-format": "^1.4.0",
+    "eslint-plugin-perfectionist": "^5.5.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.0",
+    "eslint-plugin-try-catch-failsafe": "^0.1.4",
+    "globals": "^17.6.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4"
+  }
+}
