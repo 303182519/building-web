@@ -65,7 +65,7 @@ export default defineConfig({
       js: 'source-map', // build平台会删除的*.map文件的
       css: false,
     },
-    legalComments: 'none', // 删除注释
+    legalComments: 'linked',
   },
   tools: {
     // postcss: (config, { addPlugins }) => {
