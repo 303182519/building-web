@@ -26,6 +26,9 @@ console.log('PUBLIC_ENV', mode);
 
 // Docs: https://rsbuild.rs/config/
 export default defineConfig({
+  server: {
+    port: 3001,
+  },
   source: {
     entry: pageConfig.entries,
     // 在正则表达式的例子中，我们使用 [\\/] 来匹配路径分隔符，这是
@@ -110,7 +113,7 @@ export default defineConfig({
     pluginReact({
       reactCompiler: true,
     }),
-    pluginBasicSsl(),
+    // pluginBasicSsl(),
     pluginSass(),
     pluginImageCompress([
       { use: 'png', minQuality: 50 },
