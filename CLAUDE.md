@@ -69,17 +69,17 @@ src/
 
 ### 技术栈
 
-| 技术 | 用途 |
-|------|------|
-| React 19 | UI 框架 |
-| TypeScript 6 | 类型安全 |
-| Rsbuild | 构建工具（基于 Rspack） |
-| TanStack Router | 文件路由（Hash 模式） |
-| TanStack Query | 服务端状态管理 |
-| Zustand | 客户端状态管理 |
-| mitt | 事件总线 |
-| SCSS | 样式方案 |
-| ESLint + Stylelint | 代码检查 |
+| 技术               | 用途                    |
+| ------------------ | ----------------------- |
+| React 19           | UI 框架                 |
+| TypeScript 6       | 类型安全                |
+| Rsbuild            | 构建工具（基于 Rspack） |
+| TanStack Router    | 文件路由（Hash 模式）   |
+| TanStack Query     | 服务端状态管理          |
+| Zustand            | 客户端状态管理          |
+| mitt               | 事件总线                |
+| SCSS               | 样式方案                |
+| ESLint + Stylelint | 代码检查                |
 
 ## 关键配置
 
@@ -109,6 +109,7 @@ src/
 ### TanStack Query (服务端状态)
 
 配置在 `src/components/query-provider/query-client.ts`：
+
 - `staleTime: 0` - 数据立即过期，每次挂载重新请求
 - `gcTime: 5min` - 非活跃查询 5 分钟后清除
 - `retry: 1` - 失败后重试 1 次

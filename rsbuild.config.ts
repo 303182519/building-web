@@ -113,7 +113,7 @@ export default defineConfig({
     pluginReact({
       reactCompiler: true,
     }),
-    // pluginBasicSsl(),
+    pluginBasicSsl(),
     pluginSass(),
     pluginImageCompress([
       { use: 'png', minQuality: 50 },
