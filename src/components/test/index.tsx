@@ -9,7 +9,8 @@ import { changeLng, SUPPORTED_LNGS } from '@/i18n';
  * - querystring ?lang=en-us 也能强制切换
  */
 export default function I18nDemo() {
-  const { t, i18n } = useTranslation();
+  // 声明用到的命名空间后，t('user:xxx') 这种跨命名空间写法才有类型提示
+  const { t, i18n } = useTranslation(['common', 'user']);
   // 第二个命名空间：user
   const { t: tUser } = useTranslation('user');
   const currentLng = i18n.language as SupportedLng;
