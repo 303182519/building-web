@@ -1,0 +1,9 @@
+{
+  "title": "User Info",
+  "name": "Username",
+  "age": "Age",
+  "profile": {
+    "avatar": "Avatar",
+    "bio": "Bio"
+  }
+}

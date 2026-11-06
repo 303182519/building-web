@@ -1,0 +1,15 @@
+{
+  "loading": "Loading...",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "retry": "Retry",
+  "error": {
+    "network": "Network error, please check your connection",
+    "unknown": "Unknown error"
+  },
+  "lang": {
+    "label": "Language",
+    "zh-cn": "简体中文",
+    "en-us": "English"
+  }
+}

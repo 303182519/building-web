@@ -71,11 +71,15 @@
     }
   },
   "terminal.integrated.defaultProfile.windows": "Git Bash",
-  
+
   // i18n-ally
-  "i18n-ally.localesPaths": ["packages/web/admin/src/i18n/langs"], // 翻译文件在哪里
+  "i18n-ally.localesPaths": ["src/locales"], // 翻译文件在哪里
   "i18n-ally.pathMatcher": "{locale}/{namespace}.json", // 如何识别语言和命名空间
   "i18n-ally.namespace": true, // 是否启用命名空间
+  "i18n-ally.defaultNamespace": "common", // t('key') 不带命名空间时，默认去 common.json 里找
+  "i18n-ally.annotations": true, // 开启行内中文注释
+  "i18n-ally.annotationInPlace": true, // 注释直接显示在 key 后面，而不是行尾
+  "i18n-ally.annotationMaxLength": 40, // 注释最大长度，防止过长
   "i18n-ally.keystyle": "nested", // 翻译 JSON 是嵌套还是扁平
   "i18n-ally.sourceLanguage": "zh-cn", // 哪种语言是原文
   "i18n-ally.displayLanguage": "zh-cn", // VSCode 显示哪种语言

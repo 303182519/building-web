@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import I18nDemo from '@/components/test';
 
 export const Route = createFileRoute('/')({
   component: IndexComponent,
@@ -6,19 +8,32 @@ export const Route = createFileRoute('/')({
 
 function IndexComponent() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="index-wrap">
-      <div>首页</div>
-      <div onClick={() => {
-        navigate({
-          to: '/about',
-          search: { type: 'c' },
-        });
-      }}
+      <h2>🏠 Home</h2>
+      <p>
+        loading:
+        {t('loading')}
+      </p>
+      <p>
+        confirm:
+        {t('confirm')}
+      </p>
+
+      <div
+        onClick={() => {
+          navigate({
+            to: '/about',
+            search: { type: 'c' },
+          });
+        }}
       >
-        去关于的页面
+        → Go to About
       </div>
+
+      <I18nDemo />
     </div>
   );
 }
