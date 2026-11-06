@@ -1,0 +1,93 @@
+{
+  // 关闭编辑器内置样式检查（避免与stylelint冲突）
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "prettier.enable": false,
+  "editor.formatOnSave": false,
+  // 指定哪些文件不参与搜索
+  "search.exclude": {
+    "**/node_modules": true,
+    "yarn.lock": true,
+    "**.map": true,
+    "**/routeTree.gen.ts": true
+  },
+  "files.readonlyInclude": {
+    "**/routeTree.gen.ts": true
+  },
+  "typescript.tsdk": "./node_modules/typescript/lib", // 代替 vscode 的 ts 语法智能提示
+  // index 替换成 目录名
+  "workbench.editor.customLabels.patterns": {
+    "**/index.vue": "${dirname}.vue",
+    "**/index.js": "${dirname}.js",
+    "**/index.ts": "${dirname}.ts",
+    "**/index.jsx": "${dirname}.jsx",
+    "**/index.tsx": "${dirname}.tsx"
+  },
+  "stylelint.enable": true,
+  // 配置stylelint检查的文件类型范围
+  "stylelint.validate": ["css", "less", "postcss", "scss", "sass"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "jsonc",
+    "yaml",
+    "toml",
+    "xml",
+    "gql",
+    "graphql",
+    "astro",
+    "svelte",
+    "css",
+    "less",
+    "scss",
+    "pcss",
+    "postcss"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.stylelint": "explicit",
+    "source.organizeImports": "never"
+  },
+  // 指定哪些文件不被 VSCode 监听，预防启动 VSCode 时扫描的文件太多，导致 CPU 占用过高
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/**": true,
+    "**/routeTree.gen.ts": true
+  },
+  // 终端配置
+  "terminal.integrated.profiles.windows": {
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "args": []
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  
+  // i18n-ally
+  "i18n-ally.localesPaths": ["packages/web/admin/src/i18n/langs"], // 翻译文件在哪里
+  "i18n-ally.pathMatcher": "{locale}/{namespace}.json", // 如何识别语言和命名空间
+  "i18n-ally.namespace": true, // 是否启用命名空间
+  "i18n-ally.keystyle": "nested", // 翻译 JSON 是嵌套还是扁平
+  "i18n-ally.sourceLanguage": "zh-cn", // 哪种语言是原文
+  "i18n-ally.displayLanguage": "zh-cn", // VSCode 显示哪种语言
+  "i18n-ally.enabledFrameworks": ["react-i18next"], // 哪种框架的翻译
+  "i18n-ally.enabledParsers": ["ts", "json"],
+  "i18n-ally.editor.preferEditor": true, // 优先使用 i18n-ally 自带的翻译编辑器，而不是 VS Code 默认的快速输入框。
+  "i18n-ally.extract.targetPickingStrategy": "most-similar", // 当有多个翻译目标时，选择最相似的那个
+  "i18n-ally.ignoreFiles": ["**/index.ts"], // 忽略哪些文件
+  "i18n-ally.translate.engines": ["deepl", "google"],
+  "i18n-ally.parsers.typescript.compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "moduleResolution": "node",
+    "target": "ES2020"
+  }
+}
