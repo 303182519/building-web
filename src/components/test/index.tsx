@@ -1,4 +1,5 @@
 import type { SupportedLng } from '@/i18n';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { changeLng, SUPPORTED_LNGS } from '@/i18n';
 
@@ -14,6 +15,21 @@ export default function I18nDemo() {
   // 第二个命名空间：user
   const { t: tUser } = useTranslation('user');
   const currentLng = i18n.language as SupportedLng;
+  // 切换语言需要异步加载语言包 chunk，期间禁用按钮防连点
+  const [switching, setSwitching] = useState(false);
+
+  const handleSwitch = async (lng: SupportedLng) => {
+    if (switching || lng === currentLng) {
+      return;
+    }
+    setSwitching(true);
+    try {
+      await changeLng(lng);
+    }
+    finally {
+      setSwitching(false);
+    }
+  };
 
   return (
     <div style={{ padding: 16, border: '1px dashed #ccc', margin: 12 }}>
@@ -61,14 +77,16 @@ export default function I18nDemo() {
         {SUPPORTED_LNGS.map(lng => (
           <button
             key={lng}
-            onClick={() => changeLng(lng)}
+            onClick={() => handleSwitch(lng)}
+            disabled={switching}
             style={{
               padding: '6px 12px',
               background: currentLng === lng ? '#1677ff' : '#eee',
               color: currentLng === lng ? '#fff' : '#000',
               border: 'none',
               borderRadius: 4,
-              cursor: 'pointer',
+              cursor: switching ? 'not-allowed' : 'pointer',
+              opacity: switching ? 0.6 : 1,
             }}
           >
             {t(`common:lang.${lng}`)}

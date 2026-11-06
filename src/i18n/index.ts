@@ -2,11 +2,6 @@ import type { i18n } from 'i18next';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enUSCommon from '@/locales/en-us/common.json';
-import enUSUser from '@/locales/en-us/user.json';
-import zhCNCommon from '@/locales/zh-cn/common.json';
-import zhCNUser from '@/locales/zh-cn/user.json';
-
 /** 本地存储 key：跨页面保持用户选择的语言 */
 const LANG_STORAGE_KEY = 'building-web-lang';
 
@@ -25,18 +20,68 @@ export const USER_NS = 'user';
 
 /** 可用命名空间列表（新增 namespace 只改这一处） */
 export const NAMESPACES = [DEFAULT_NS, USER_NS] as const;
+export type Namespace = (typeof NAMESPACES)[number];
 
-/** 把 import 进来的 JSON 组织成 i18next init.resources 需要的结构 */
-const RESOURCES = {
-  'zh-cn': {
-    [DEFAULT_NS]: zhCNCommon,
-    [USER_NS]: zhCNUser,
-  },
-  'en-us': {
-    [DEFAULT_NS]: enUSCommon,
-    [USER_NS]: enUSUser,
-  },
-};
+/**
+ * 构建期扫描 src/locales 下所有 JSON，生成 语言/ns 粒度的异步 loader 映射。
+ * 'lazy' 模式下每个 JSON 会被拆成独立 chunk，调用时才发请求，
+ * 效果等价于 Vite 的 import.meta.glob('./locales/*\/*.json')。
+ * 参数必须是字面量，Rspack 在编译期静态解析。
+ */
+
+// 概念等价物，并非真实生成代码
+/*
+  const localeContext = (key) => ({
+    './zh-cn/common.json': () => import('./zh-cn/common.json'),
+    './zh-cn/user.json':   () => import('./zh-cn/user.json'),
+    './en-us/common.json': () => import('./en-us/common.json'),
+    './en-us/user.json':   () => import('./en-us/user.json'),
+  }[key]());
+*/
+const localeContext = require.context('../locales', true, /\.json$/, 'lazy');
+
+/** 已注册进 i18next 的 语言/ns，避免重复加载注册 */
+const loadedNs = new Set<string>();
+
+/** 进行中的加载 Promise，并发/连点调用时去重 */
+const inflightLoads = new Map<string, Promise<void>>();
+
+/**
+ * 按需加载并注册单个命名空间的语言资源。
+ * 已加载的直接返回；同一资源并发调用共享同一个 Promise。
+ *
+ * ⚠️ 内部不 await initI18n（init 流程自己也会调它，会造成死锁），
+ *    外部调用前请确保 initI18n() 已完成。
+ */
+export async function loadNamespace(lng: SupportedLng, ns: Namespace): Promise<void> {
+  const key = `${lng}/${ns}`;
+  if (loadedNs.has(key)) {
+    return;
+  }
+
+  let pending = inflightLoads.get(key);
+  if (!pending) {
+    pending = localeContext(`./${key}.json`)
+      .then((mod) => {
+        // JSON 模块的内容挂在 default 导出上
+        const resource = (mod as { default?: unknown }).default ?? mod;
+        // 两个 true：deep 深度合并 + overwrite 覆盖已有翻译
+        i18next.addResourceBundle(lng, ns, resource as Record<string, unknown>, true, true);
+        loadedNs.add(key);
+      })
+      .finally(() => {
+        inflightLoads.delete(key);
+      });
+    inflightLoads.set(key, pending);
+  }
+
+  await pending;
+}
+
+/** 并行加载某个语言的全部命名空间 */
+async function loadLanguage(lng: SupportedLng): Promise<void> {
+  await Promise.all(NAMESPACES.map(ns => loadNamespace(lng, ns)));
+}
 
 /** 判断一个值是否是合法语言码 */
 function isValidLng(value: string | null): value is SupportedLng {
@@ -108,8 +153,9 @@ let initPromise: Promise<i18n> | null = null;
 /**
  * 初始化 i18next。MPA 每个页面 mount 前 await 一次即可，多次调用安全。
  *
- * 资源通过构建期 import 直接塞进 init.resources，init 时会同步进
- * translator.resourceStore（t() 真正读取的地方），无需运行时请求。
+ * 资源不再内置进 bundle：init 时传空 resources，随后按需加载当前语言的
+ * JSON chunk 并通过 addResourceBundle 注册。加载完成才放行渲染，
+ * 保证页面首次 render 时 t() 已经能拿到正确文案。
  */
 export function initI18n(): Promise<i18n> {
   if (initPromise) {
@@ -135,13 +181,11 @@ export function initI18n(): Promise<i18n> {
       //   而 i18next 的类型要求可变的 string[]，直接传只读元组会类型报错，
       //   展开后就是普通的 ['zh-cn', 'en-us'] 数组。
       //
-      // ⚠️ 大小写必须与 lowerCaseLng（下面那项）、src/locales 目录名、resources 的 key 完全一致。
-      //    i18next 默认会把 'zh-cn' 转成 'zh-CN'，若此处写小写且不开 lowerCaseLng，
-      //    就会匹配失败导致所有 t() 返回 key（之前踩过的坑）。
+      // ⚠️ 大小写必须与 lowerCaseLng（下面那项）、src/locales 目录名完全一致。
       supportedLngs: [...SUPPORTED_LNGS],
 
       // ⚠️ 必须开启：i18next 默认会把 'zh-cn' 格式化成 'zh-CN'（区域码首字母大写），
-      // 与 supportedLngs / resources 里的小写 'zh-cn' 大小写不匹配，
+      // 与 supportedLngs / 资源目录里的小写 'zh-cn' 大小写不匹配，
       // 会导致语言被拒绝（i18n.languages 变空），所有 t() 直接返回 key。
       // 开启后语言码全程小写，与目录名、URL 参数、i18n-ally 配置保持一致。
       lowerCaseLng: true,
@@ -150,18 +194,12 @@ export function initI18n(): Promise<i18n> {
       // 避免出现 "rejecting language code not found in supportedLngs: en" 这类无用告警。
       load: 'currentOnly',
 
-      // 【内置翻译资源】init 时一次性把全部字典塞给 i18next，无需运行时再发请求。
-      // 结构是三层嵌套：语言码 → 命名空间 → 具体 key。
-      //    {
-      //      'zh-cn': { common: { loading: '加载中...' }, user: { title: '用户信息' } },
-      //      'en-us': { common: { loading: 'Loading...' }, user: { title: 'User Info' } },
-      //    }
-      // 对应的取值方式：
-      //   t('loading')              → 默认命名空间 common（defaultNS）
-      //   t('common:loading')       → 显式指定 common
-      //   t('user:title')           → 跨命名空间取 user
-      // 代价是所有语言都会被打进 bundle；只有 2~3 种语言的 H5 完全可接受。
-      resources: RESOURCES,
+      // 【按需加载】init 时不内置任何翻译资源，语言包在下面 init 完成后
+      // 通过 require.context('lazy') 拆出的异步 chunk 按需加载，
+      // 再用 addResourceBundle 注册进 i18next。
+      // 注意：fallbackLng（zh-cn）的包不会为非中文用户预载，
+      // 运行时 fallback 依赖各语言 key 对齐（开发期由 i18n-ally 保证）。
+      resources: {},
 
       keySeparator: '.',
       nsSeparator: ':',
@@ -172,14 +210,19 @@ export function initI18n(): Promise<i18n> {
         escapeValue: false, // React 会自动转义 XSS
       },
     })
-    .then(() => i18next);
+    .then(async () => {
+      // 先加载当前语言资源再放行渲染
+      await loadLanguage(lng);
+      return i18next;
+    });
 
   return initPromise;
 }
 
-/** 切换语言。同时写入 localStorage，跨页面保持选择。 */
+/** 切换语言。先加载资源再切换，同时写入 localStorage 跨页面保持选择。 */
 export async function changeLng(nextLng: SupportedLng): Promise<void> {
   await initI18n();
+  await loadLanguage(nextLng);
   await i18next.changeLanguage(nextLng);
   try {
     window.localStorage.setItem(LANG_STORAGE_KEY, nextLng);

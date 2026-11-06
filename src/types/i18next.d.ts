@@ -9,8 +9,9 @@ import type user from '@/locales/zh-cn/user.json';
  * 之后 t('loadin') 这种拼写错误会在编辑器里直接报红，写 t(' 时也会自动补全。
  *
  * 新增命名空间时，改两处：
- * 1. src/i18n/index.ts 的 NAMESPACES / RESOURCES
+ * 1. src/i18n/index.ts 的 NAMESPACES
  * 2. 本文件 resources 里补一行
+ * （类型提示仍走静态 import type，与运行时的按需加载互不影响）
  */
 declare module 'i18next' {
   interface CustomTypeOptions {
