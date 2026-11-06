@@ -23,64 +23,61 @@ export const NAMESPACES = [DEFAULT_NS, USER_NS] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 /**
- * 构建期扫描 src/locales 下所有 JSON，生成 语言/ns 粒度的异步 loader 映射。
- * 'lazy' 模式下每个 JSON 会被拆成独立 chunk，调用时才发请求，
- * 效果等价于 Vite 的 import.meta.glob('./locales/*\/*.json')。
+ * 构建期扫描各语言目录的 index.ts（每个入口静态 import 了该语言全部 JSON），
+ * 'lazy' 模式下每种语言整体拆成一个异步 chunk，调用时才发请求，
+ * 等价于文章里 glob('./locales/*\/index.ts') 的第一层懒加载。
  * 参数必须是字面量，Rspack 在编译期静态解析。
  */
 
 // 概念等价物，并非真实生成代码
 /*
-  const localeContext = (key) => ({
-    './zh-cn/common.json': () => import('./zh-cn/common.json'),
-    './zh-cn/user.json':   () => import('./zh-cn/user.json'),
-    './en-us/common.json': () => import('./en-us/common.json'),
-    './en-us/user.json':   () => import('./en-us/user.json'),
+  const langContext = (key) => ({
+    './zh-cn/index.ts': () => import('./zh-cn/index.ts'),
+    './en-us/index.ts': () => import('./en-us/index.ts'),
   }[key]());
 */
-const localeContext = require.context('../locales', true, /\.json$/, 'lazy');
+const langContext = require.context('../locales', true, /index\.ts$/, 'lazy');
 
-/** 已注册进 i18next 的 语言/ns，避免重复加载注册 */
-const loadedNs = new Set<string>();
+/** 已加载注册过的语言，避免重复请求 */
+const loadedLngs = new Set<string>();
 
 /** 进行中的加载 Promise，并发/连点调用时去重 */
 const inflightLoads = new Map<string, Promise<void>>();
 
 /**
- * 按需加载并注册单个命名空间的语言资源。
- * 已加载的直接返回；同一资源并发调用共享同一个 Promise。
+ * 按需加载并注册某个语言的全部资源（一种语言 = 一个 chunk = 一次请求）。
+ * 已加载的直接返回；同一语言并发调用共享同一个 Promise。
  *
  * ⚠️ 内部不 await initI18n（init 流程自己也会调它，会造成死锁），
  *    外部调用前请确保 initI18n() 已完成。
  */
-export async function loadNamespace(lng: SupportedLng, ns: Namespace): Promise<void> {
-  const key = `${lng}/${ns}`;
-  if (loadedNs.has(key)) {
+async function loadLanguage(lng: SupportedLng): Promise<void> {
+  if (loadedLngs.has(lng)) {
     return;
   }
 
-  let pending = inflightLoads.get(key);
+  let pending = inflightLoads.get(lng);
   if (!pending) {
-    pending = localeContext(`./${key}.json`)
+    pending = langContext(`./${lng}/index.ts`)
       .then((mod) => {
-        // JSON 模块的内容挂在 default 导出上
-        const resource = (mod as { default?: unknown }).default ?? mod;
-        // 两个 true：deep 深度合并 + overwrite 覆盖已有翻译
-        i18next.addResourceBundle(lng, ns, resource as Record<string, unknown>, true, true);
-        loadedNs.add(key);
+        // 语言入口的 default 导出：{ common: {...}, user: {...} }
+        const resources = ((mod as { default?: Record<string, unknown> }).default ?? mod) as Record<
+          string,
+          unknown
+        >;
+        // 逐命名空间注册；两个 true：deep 深度合并 + overwrite 覆盖已有翻译
+        for (const [ns, resource] of Object.entries(resources)) {
+          i18next.addResourceBundle(lng, ns, resource as Record<string, unknown>, true, true);
+        }
+        loadedLngs.add(lng);
       })
       .finally(() => {
-        inflightLoads.delete(key);
+        inflightLoads.delete(lng);
       });
-    inflightLoads.set(key, pending);
+    inflightLoads.set(lng, pending);
   }
 
   await pending;
-}
-
-/** 并行加载某个语言的全部命名空间 */
-async function loadLanguage(lng: SupportedLng): Promise<void> {
-  await Promise.all(NAMESPACES.map(ns => loadNamespace(lng, ns)));
 }
 
 /** 判断一个值是否是合法语言码 */
